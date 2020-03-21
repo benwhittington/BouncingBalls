@@ -12,45 +12,20 @@ class Colour {
 }
 
 class Ball {
-    constructor(ctx, colour) {
-        this.r = randomBetween(3, 50);
+    constructor(x, y) {
         this.winX = window.innerWidth;
         this.winY = window.innerHeight;
-        this.x = randomBetween(this.r, this.winX-this.r);
-        this.y = randomBetween(this.r, this.winY-this.r);
-        this.vx = randomBetween(1, 10);
-        this.vy = randomBetween(1, 10)
-        this.ctx = ctx;
-        this.colour = colour;
-    }
+        this.r = randomBetween(3, 30);
+        this.vx = randomBetween(-10, 10);
+        this.vy = randomBetween(-10, 10)
+        this.colour = randomColour();
 
-    draw() {
-        this.ctx.fillStyle = this.colour.getString();
-        this.ctx.beginPath();
-        this.ctx.arc(this.x,this.y,this.r,0,Math.PI*2,true);
-        this.ctx.fill();        
-    }
-
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-    }
-
-    checkBoundaryCollision() {
-        if(this.x >= this.winX - this.r) {
-            this.vx *= -1;
-        }
-
-        if(this.x <= 0 + this.r) {
-            this.vx *= -1
-        }
-
-        if(this.y >= this.winY - this.r) {
-            this.vy *= -1;
-        }
-
-        if(this.y <= 0 + this.r) {
-            this.vy *= -1;
+        if(x === undefined || y === undefined) {
+            this.x = randomBetween(this.r, this.winX-this.r);
+            this.y = randomBetween(this.r, this.winY-this.r);
+        } else {            
+            this.x = x;
+            this.y = y;
         }
     }
 }
@@ -60,6 +35,7 @@ class ContextHandler {
         this.ctx = ctx;
         this.balls = [];
         this.backgroundColour = new Colour(0,0,0,1);
+        this.frac = 0.001
     }
 
     addBall(ball) {
@@ -67,11 +43,55 @@ class ContextHandler {
     }
 
     update() {
+        let avgSpeed = 0;
+        this.clear();
+
         for(let i = 0; i < this.balls.length; ++i) {
-            this.balls[i].draw();
-            this.balls[i].update();
-            this.balls[i].checkBoundaryCollision();
+            console.log(this.balls.length);
+            this.draw(this.balls[i]);
+            this.updateBall(this.balls[i]);
+            this.checkBoundaryCollision(this.balls[i]);
+            this.reduceSpeed(this.balls[i]);
+
+            avgSpeed += Math.sqrt(Math.pow(this.balls[i].vx, 2) + Math.pow(this.balls[i].vy, 2));
         }
+        avgSpeed /= this.balls.length;
+        if(avgSpeed < 0.1 || avgSpeed > 15) { this.frac *= -1 }
+    }
+
+    draw(ball) {
+        this.ctx.fillStyle = ball.colour.getString();
+        this.ctx.beginPath();
+        this.ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2,true);
+        this.ctx.fill();   
+    }
+
+    updateBall(ball) {
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+    }
+
+    checkBoundaryCollision(ball) {
+        if(ball.x >= ball.winX - ball.r) {
+            ball.vx *= -1;
+        }
+
+        if(ball.x <= 0 + ball.r) {
+            ball.vx *= -1
+        }
+
+        if(ball.y >= ball.winY - ball.r) {
+            ball.vy *= -1;
+        }
+
+        if(ball.y <= 0 + ball.r) {
+            ball.vy *= -1;
+        }
+    }
+
+    reduceSpeed(ball) {
+        ball.vx *= 1 - this.frac;
+        ball.vy *= 1 - this.frac;
     }
 
     clear() {
@@ -95,26 +115,30 @@ function inititaliseCanvas() {
     return canvas.getContext('2d');
 }
 
-function main() {
+function getContextHandler() {
     const context = inititaliseCanvas();
 
     let balls = [];
     contextHandler = new ContextHandler(context);
-    let numberOfBalls = 5;
+    let numberOfBalls = 30;
+
     for(let i = 0;i < numberOfBalls; ++i) {
-        contextHandler.addBall(new Ball(context, randomColour()));
+        contextHandler.addBall(new Ball());
     }
 
+    return contextHandler;
+}
+
+function addBallEvent(e) {
+    contextHandler.addBall(new Ball(e.clientX, e.clientY));
+}
+
+function mainLoop() {
     contextHandler.update();
-
-    function mainLoop() {
-        contextHandler.clear();
-        contextHandler.update();
-
-        requestAnimationFrame(mainLoop)
-    }
-
+    
     requestAnimationFrame(mainLoop);
 }
 
-main()
+document.addEventListener("click", addBallEvent);
+contextHandler = getContextHandler();
+requestAnimationFrame(mainLoop);
