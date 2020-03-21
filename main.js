@@ -23,23 +23,59 @@ class Ball {
         this.ctx.arc(this.x,this.y,this.r,0,Math.PI*2,true);
         this.ctx.fill();        
     }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+    }
 }
 
-main = function() {
+class ContextHandler {
+    constructor(ctx) {
+        this.ctx = ctx;
+        this.balls = [];
+    }
+
+    addBall(ball) {
+        this.balls.push(ball);
+    }
+
+    update() {
+        for(let i = 0; i < this.balls.length; ++i) {
+            this.balls[i].draw();
+            this.balls[i].update();
+        }
+    }
+}
+
+function inititaliseCanvas() {
     const canvas = document.querySelector('.myCanvas');
-    const width = canvas.width = window.innerWidth;
-    const height = canvas.height = window.innerHeight;
-    const ctx = canvas.getContext('2d');
-    // ctx.translate(width/2, height/2);
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    return canvas.getContext('2d');
+}
+
+function doFrame(contextHandler) {
+    contextHandler.update();
+}
+
+function mainLoop(contextHandler) {
+    context.fillStyle = 'rgba(0,0,0.25)'
+}
+
+function main() {
+    const context = inititaliseCanvas();
 
     let balls = [];
-    balls.push(new Ball(ctx, 'rgb(255,0,0)'));
-    balls.push(new Ball(ctx, 'rgb(0,255,0)'));
-    balls.push(new Ball(ctx, randomColour()));
+    
+    contextHandler = new ContextHandler(context);
 
-    for(let i = 0;i < balls.length; ++i) {
-        balls[i].draw();
-    }
+    contextHandler.addBall(new Ball(context, 'rgb(255,0,0)'));
+    contextHandler.addBall(new Ball(context, 'rgb(0,255,0)'));
+    contextHandler.addBall(new Ball(context, randomColour()));
+    
+    
+
 }
 
 main()
